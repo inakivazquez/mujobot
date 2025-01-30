@@ -26,7 +26,7 @@ class UR5ReachEnv(gym.Env):
             self.viewer = mujoco.viewer.launch_passive(self.model, self.data)
 
         # Target pos, current pos of ee, joint positions
-        self.observation_space = gym.spaces.Box(low=np.array([-1]*6 + [-2*math.pi]*6, dtype=np.float32), high=np.array([+1]*6 + [+2*math.pi]*6, dtype=np.float64), shape=(12,))
+        self.observation_space = gym.spaces.Box(low=np.array([-1]*6 + [-2*math.pi]*6, dtype=np.float64), high=np.array([+1]*6 + [+2*math.pi]*6, dtype=np.float64), shape=(12,))
         action_max = 2*math.pi / 10
         self.action_space = gym.spaces.Box(low=-action_max, high=+action_max, shape=(6,))
 

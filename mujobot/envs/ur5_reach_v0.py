@@ -8,6 +8,7 @@ import numpy as np
 import math
 import mujoco.viewer
 from robot_descriptions import ur5e_mj_description
+import os
 
 
 class UR5ReachEnv(gym.Env):
@@ -15,7 +16,9 @@ class UR5ReachEnv(gym.Env):
     metadata = {'render_modes': ['human'], 'render_fps': 30}
     
     def __init__(self, render_mode=None):
-        self.model = mujoco.MjModel.from_xml_path(ur5e_mj_description.PACKAGE_PATH+"/scene.xml")
+        #self.model = mujoco.MjModel.from_xml_path(ur5e_mj_description.PACKAGE_PATH+"/scene.xml")
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.model = mujoco.MjModel.from_xml_path(current_dir + "/ur5_reach/scene.xml")
 
         # Create a data structure to hold the simulation state
         self.data = mujoco.MjData(self.model)

@@ -6,3 +6,8 @@ register(
     max_episode_steps=100,
 )
 
+register(
+    id='mujobot/ur5-gripper-v0',
+    entry_point='mujobot.envs.ur5_gripper_v0:UR5GripperEnv',
+    max_episode_steps=100,
+)

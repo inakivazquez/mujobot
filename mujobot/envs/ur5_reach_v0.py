@@ -26,7 +26,7 @@ class UR5ReachEnv(gym.Env):
             self.viewer = mujoco.viewer.launch_passive(self.model, self.data)
 
         # Target pos, current pos of ee, joint positions
-        self.observation_space = gym.spaces.Box(low=np.array([-1]*6 + [-2*math.pi]*6, dtype=np.float64), high=np.array([+1]*6 + [+2*math.pi]*6, dtype=np.float64), shape=(12,))
+        self.observation_space = gym.spaces.Box(low=np.array([-1]*6 + [-2*math.pi]*6, dtype=np.float32), high=np.array([+1]*6 + [+2*math.pi]*6, dtype=np.float32), shape=(12,))
         action_max = 2*math.pi / 10
         self.action_space = gym.spaces.Box(low=-action_max, high=+action_max, shape=(6,))
 
@@ -81,7 +81,7 @@ class UR5ReachEnv(gym.Env):
     def get_observation(self):
         ee_pos, ee_quat = self.get_ee_pose()
         joint_pos = self.data.qpos[0:6]
-        return np.concatenate((self.target_pos, ee_pos, joint_pos), dtype=np.float64)
+        return np.concatenate((self.target_pos, ee_pos, joint_pos), dtype=np.float32)
 
     def get_ee_pose(self):
         link_name = "wrist_3_link"

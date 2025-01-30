@@ -1,7 +1,5 @@
 <mujoco model="robotiq_2f85">
 
-  <option cone="elliptic" impratio="10"/>
-
   <asset>
     <material name="metal" rgba="0.58 0.58 0.58 1"/>
     <material name="silicone" rgba="0.1882 0.1882 0.1882 1"/>

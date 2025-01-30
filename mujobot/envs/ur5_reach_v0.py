@@ -10,6 +10,9 @@ from robot_descriptions import ur5e_mj_description
 
 
 class UR5ReachEnv(gym.Env):
+
+    metadata = {'render_modes': ['human'], 'render_fps': 30}
+    
     def __init__(self, render_mode=None):
         self.model = mujoco.MjModel.from_xml_path(ur5e_mj_description.PACKAGE_PATH+"/scene.xml")
 
@@ -22,7 +25,7 @@ class UR5ReachEnv(gym.Env):
             self.viewer = mujoco.viewer.launch_passive(self.model, self.data)
 
         # Target pos, current pos of ee, joint positions
-        self.observation_space = gym.spaces.Box(low=np.array([-1]*6 + [-2*math.pi]*6, dtype=np.float32), high=np.array([+1]*6 + [+2*math.pi]*6, dtype=np.float32), shape=(12,))
+        self.observation_space = gym.spaces.Box(low=np.array([-1]*6 + [-2*math.pi]*6, dtype=np.float64), high=np.array([+1]*6 + [+2*math.pi]*6, dtype=np.float64), shape=(12,))
         action_max = 2*math.pi / 10
         self.action_space = gym.spaces.Box(low=-action_max, high=+action_max, shape=(6,))
 
@@ -55,6 +58,7 @@ class UR5ReachEnv(gym.Env):
         self.wait_until_stable()
 
         obs = self.get_observation()
+        print(obs)
         ee_pos = obs[3:6]
         distance = np.linalg.norm(self.target_pos - ee_pos)
         reward = -distance

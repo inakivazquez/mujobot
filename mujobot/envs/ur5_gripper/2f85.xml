@@ -1,21 +1,5 @@
 <mujoco model="robotiq_2f85">
 
-  <asset>
-    <material name="metal" rgba="0.58 0.58 0.58 1"/>
-    <material name="silicone" rgba="0.1882 0.1882 0.1882 1"/>
-    <material name="gray" rgba="0.4627 0.4627 0.4627 1"/>
-    <material name="black" rgba="0.149 0.149 0.149 1"/>
-
-    <mesh class="2f85" file="base_mount.stl"/>
-    <mesh class="2f85" file="base.stl"/>
-    <mesh class="2f85" file="driver.stl"/>
-    <mesh class="2f85" file="coupler.stl"/>
-    <mesh class="2f85" file="follower.stl"/>
-    <mesh class="2f85" file="pad.stl"/>
-    <mesh class="2f85" file="silicone_pad.stl"/>
-    <mesh class="2f85" file="spring_link.stl"/>
-  </asset>
-
   <default>
     <default class="2f85">
       <mesh scale="0.001 0.001 0.001"/>

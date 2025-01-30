@@ -57,6 +57,22 @@
     <mesh file="wrist2_1.obj"/>
     <mesh file="wrist2_2.obj"/>
     <mesh file="wrist3.obj"/>
+
+    <!-- Robotiq 2F85 gripper assets -->
+    <material name="metal" rgba="0.58 0.58 0.58 1"/>
+    <material name="silicone" rgba="0.1882 0.1882 0.1882 1"/>
+    <material name="gray" rgba="0.4627 0.4627 0.4627 1"/>
+    <material name="black" rgba="0.149 0.149 0.149 1"/>
+
+    <mesh class="2f85" file="base_mount.stl"/>
+    <mesh class="2f85" file="base.stl"/>
+    <mesh class="2f85" file="driver.stl"/>
+    <mesh class="2f85" file="coupler.stl"/>
+    <mesh class="2f85" file="follower.stl"/>
+    <mesh class="2f85" file="pad.stl"/>
+    <mesh class="2f85" file="silicone_pad.stl"/>
+    <mesh class="2f85" file="spring_link.stl"/>
+
   </asset>
 
   <worldbody>

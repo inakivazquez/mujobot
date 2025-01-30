@@ -11,7 +11,7 @@ authors = [
 ]
 dependencies = [
     "numpy==1.26.4",
-    "gymnasium==0.29.1",
+    "gymnasium>=1.0.0",
     "mujoco",
     "robot_descriptions"
 ]

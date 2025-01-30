@@ -81,7 +81,7 @@ class UR5ReachEnv(gym.Env):
     def get_observation(self):
         ee_pos, ee_quat = self.get_ee_pose()
         joint_pos = self.data.qpos[0:6]
-        return np.concatenate((self.target_pos, ee_pos, joint_pos))
+        return np.concatenate((self.target_pos, ee_pos, joint_pos), dtype=np.float64)
 
     def get_ee_pose(self):
         link_name = "wrist_3_link"

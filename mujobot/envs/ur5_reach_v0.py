@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Any
 
 import gymnasium as gym
+from gymnasium.core import ObsType, ActType, SupportsFloat, RenderFrame
 import mujoco
 import numpy as np
 import math
@@ -25,12 +26,12 @@ class UR5ReachEnv(gym.Env):
             self.viewer = mujoco.viewer.launch_passive(self.model, self.data)
 
         # Target pos, current pos of ee, joint positions
-        self.observation_space = gym.spaces.Box(low=np.array([-1]*6 + [-2*math.pi]*6, dtype=np.float64), high=np.array([+1]*6 + [+2*math.pi]*6, dtype=np.float64), shape=(12,))
+        self.observation_space = gym.spaces.Box(low=np.array([-1]*6 + [-2*math.pi]*6, dtype=np.float32), high=np.array([+1]*6 + [+2*math.pi]*6, dtype=np.float64), shape=(12,))
         action_max = 2*math.pi / 10
         self.action_space = gym.spaces.Box(low=-action_max, high=+action_max, shape=(6,))
 
 
-    def reset(self, seed: int | None = None, options: dict[str, Any] | None = None):
+    def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None) -> tuple[ObsType, dict[str, Any]]:
         np.random.seed(seed)
         mujoco.mj_resetData(self.model, self.data)  # Fully resets simulation state
         self.target_pos = np.random.uniform(-0.5, 0.5, size=3)
@@ -52,13 +53,14 @@ class UR5ReachEnv(gym.Env):
         print("Warning: The robot configuration did not stabilize")
         return False
 
-    def step(self, action):
+    def step(self, action: ActType) -> tuple[ObsType, SupportsFloat, bool, bool, dict[str, Any]]:
+        assert self.action_space.contains(action), f"Invalid Action: {action}"
+
         self.data.ctrl[:] += action
         self.data.ctrl[:] = np.clip(self.data.ctrl, -2*math.pi, +2*math.pi)
         self.wait_until_stable()
 
         obs = self.get_observation()
-        print(obs)
         ee_pos = obs[3:6]
         distance = np.linalg.norm(self.target_pos - ee_pos)
         reward = -distance
@@ -69,8 +71,12 @@ class UR5ReachEnv(gym.Env):
         info = {}
         return obs, reward, terminated, truncated, info
 
-    def render(self):
+    def render(self) -> RenderFrame | list[RenderFrame] | None:
         self.viewer.sync()
+
+    def close(self):
+        if self.render_mode == 'human':
+            self.viewer.close()
 
     def get_observation(self):
         ee_pos, ee_quat = self.get_ee_pose()

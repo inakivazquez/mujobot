@@ -1,5 +1,4 @@
 <mujoco model="robotiq_2f85">
-  <compiler angle="radian" meshdir="assets_gripper" autolimits="true"/>
 
   <option cone="elliptic" impratio="10"/>
 

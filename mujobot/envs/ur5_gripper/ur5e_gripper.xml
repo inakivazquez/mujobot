@@ -48,9 +48,6 @@
         <joint range="-1.57 0" armature="0.001" solimplimit="0.95 0.99 0.001" solreflimit="0.005 1"/>
       </default>
 
-      <default class="visual">
-        <geom type="mesh" contype="0" conaffinity="0" group="2"/>
-      </default>
       <default class="collision">
         <geom type="mesh" group="3"/>
         <default class="pad_box1">

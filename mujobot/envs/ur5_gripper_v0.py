@@ -30,6 +30,8 @@ class UR5GripperEnv(gym.Env):
 
         # Target pos, current pos of ee, joint positions
         self.observation_space = gym.spaces.Box(low=np.array([-1]*6 + [-2*math.pi]*6, dtype=np.float32), high=np.array([+1]*6 + [+2*math.pi]*6, dtype=np.float32), shape=(12,))
+
+        # Action space is 6 joint angles and the gripper open/close level (0 to 1)
         action_max = 2*math.pi / 10
         self.action_space = gym.spaces.Box(low=np.array([-action_max]*6+[0]), high=np.array([+action_max]*6+[1]), shape=(7,))
 
@@ -89,7 +91,7 @@ class UR5GripperEnv(gym.Env):
         return np.concatenate((self.target_pos, ee_pos, joint_pos), dtype=np.float32)
 
     def get_ee_pose(self):
-        link_name = "wrist_3_link"
+        link_name = "pinch"
         link_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, link_name)
         return self.data.xpos[link_id], self.data.xquat[link_id]
     

@@ -3,6 +3,9 @@
 
   <option integrator="implicitfast" cone="elliptic" impratio="10"/>  
 
+  <include file="2f85.xml"/>
+
+
   <default>
     <default class="ur5e">
       <material specular="0.5" shininess="0.25"/>
@@ -191,7 +194,7 @@
                   <site name="attachment_site" pos="0 0.1 0" quat="-1 1 0 0"/>
                   <!-- Attaching the gripper -->
                   <body name="gripper" pos="0 0.1 0">
-                    <joint name="gripper_weld" type="weld"/>
+                    <geom mesh="base_mount" material="black" class="visual"/>
                   </body>
                 </body>
               </body>

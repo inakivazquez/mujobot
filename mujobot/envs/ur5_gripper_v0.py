@@ -31,7 +31,7 @@ class UR5GripperEnv(gym.Env):
         # Target pos, current pos of ee, joint positions
         self.observation_space = gym.spaces.Box(low=np.array([-1]*6 + [-2*math.pi]*6, dtype=np.float32), high=np.array([+1]*6 + [+2*math.pi]*6, dtype=np.float32), shape=(12,))
         action_max = 2*math.pi / 10
-        self.action_space = gym.spaces.Box(low=-action_max, high=+action_max, shape=(6,))
+        self.action_space = gym.spaces.Box(low=np.array([-action_max]*6+[0]), high=np.array([+action_max]*6+[1]), shape=(7,))
 
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None) -> tuple[ObsType, dict[str, Any]]:
@@ -58,6 +58,8 @@ class UR5GripperEnv(gym.Env):
 
     def step(self, action: ActType) -> tuple[ObsType, SupportsFloat, bool, bool, dict[str, Any]]:
         assert self.action_space.contains(action), f"Invalid Action: {action}"
+
+        action[6] = 0 if action[6] < 0.5 else 255
 
         self.data.ctrl[:] += action
         self.data.ctrl[:] = np.clip(self.data.ctrl, -2*math.pi, +2*math.pi)
@@ -105,13 +107,13 @@ class UR5GripperEnv(gym.Env):
         self.viewer.user_scn.ngeom = 1
         
 
+import time
 if __name__ == "__main__":
-    env = UR5Env(render_mode="human")
+    env = UR5GripperEnv(render_mode="human")
     obs = env.reset()
-    terminated = False
-    while not terminated:
-        action = env.action_space.sample()
-        obs, reward, terminated, _, _ = env.step(action)
+    for _ in range(1000):
+        action = [0]*7
+        obs, reward, terminated, truncated, info = env.step(action)
         env.render()
-        print("Observation:", obs)
-        print("Reward:", reward)
+        time.sleep(1)
+    env.close()

@@ -192,7 +192,6 @@
                   <!-- Attaching the gripper -->
                   <body name="gripper" pos="0 0.1 0">
                     <joint name="gripper_weld" type="weld"/>
-                    <include file="2f85.xml"/>
                   </body>
                 </body>
               </body>

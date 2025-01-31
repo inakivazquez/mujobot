@@ -312,7 +312,7 @@
 
   </actuator>
 
-  <keyframe>
+<!--  <keyframe>
     <key name="home" qpos="-1.5708 -1.5708 1.5708 -1.5708 -1.5708 0" ctrl="-1.5708 -1.5708 1.5708 -1.5708 -1.5708 0"/>
-  </keyframe>
+  </keyframe> -->
 </mujoco>

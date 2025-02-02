@@ -30,39 +30,38 @@ class UR5GripperEnv(gym.Env):
             self.viewer = mujoco.viewer.launch_passive(self.model, self.data)
 
         # Target pos, current pos of ee, joint positions
-        self.observation_space = gym.spaces.Box(low=np.array([-1]*3 + [-2*math.pi]*6, dtype=np.float32), high=np.array([+1]*3 + [+2*math.pi]*6, dtype=np.float32), shape=(9,))
+        self.observation_space = gym.spaces.Box(low=np.array([-2]*3 + [-2*math.pi]*6, dtype=np.float32), high=np.array([+2]*3 + [+2*math.pi]*6, dtype=np.float32), shape=(9,))
 
         # Action space is 6 joint angles and the gripper open/close level (0 to 1)
         action_max = 2*math.pi / 10
-        self.action_space = gym.spaces.Box(low=np.array([-action_max]*6+[0]), high=np.array([+action_max]*6+[1]), shape=(7,))
+        self.action_space = gym.spaces.Box(low=np.array([-action_max]*6+[0], dtype=np.float32), high=np.array([+action_max]*6+[1], dtype=np.float32), shape=(7,))
         self.target_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "target")
 
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None) -> tuple[ObsType, dict[str, Any]]:
         np.random.seed(seed)
         mujoco.mj_resetData(self.model, self.data)  # Fully resets simulation state
-        self.target_pos = np.random.uniform(-0.5, 0.5, size=3)
-        self.target_pos[2] = 0.7
-        self.model.body_pos[self.target_id] = self.target_pos  # Update position
+        self.target_pos = np.array(generate_random_point_in_shell(0, 0, 0, 0.8, 0.7))
+        self.target_pos[2] = abs (self.target_pos[2])
 
         qpos_addr = self.model.jnt_qposadr[mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_JOINT, "target_joint")]
+        #self.data.qpos[qpos_addr:qpos_addr+3] = self.target_pos
 
-        self.data.qpos[qpos_addr:qpos_addr+3] = self.target_pos  # Teleport
-
-
-        #if self.render_mode == "human":
-            #self.draw_sphere(self.target_pos, 0.025)
+        if self.render_mode == "human":
+            self.draw_sphere(self.target_pos, 0.025)
         return self.get_observation(), {}
 
-    def wait_until_stable(self, sim_steps=500):
+    def wait_until_stable(self, sim_steps=500, tolerance=1e-3):
         joint_pos = self.get_observation()[3:]
         for _ in range(sim_steps):
             mujoco.mj_step(self.model, self.data)
             if self.render_mode == "human":
                 self.viewer.sync()
             new_joint_pos = self.get_observation()[3:]
-            if np.sum(np.abs(np.array(joint_pos)-np.array(new_joint_pos))) < 5e-3: # Threshold based on experience
+
+            if np.linalg.norm(new_joint_pos - joint_pos, ord=np.inf) < tolerance:  # Faster error check, similar to abs np.all
                 return True
+        
             joint_pos = new_joint_pos
         print("Warning: The robot configuration did not stabilize")
         return False
@@ -71,19 +70,22 @@ class UR5GripperEnv(gym.Env):
         assert self.action_space.contains(action), f"Invalid Action: {action}"
 
         action[0:6] = self.data.ctrl[0:6] + action[0:6]
-        action[6] = 0 if action[6] < 0.5 else 255
+        #action[6] = 0 if action[6] < 0.5 else 255
+        action[6] = 0 # Always keep the gripper open
+
+        action[0:6] = np.clip(action[0:6], -2*math.pi, +2*math.pi)
 
         self.data.ctrl[:] = action
-        self.data.ctrl[:] = np.clip(self.data.ctrl, -2*math.pi, +2*math.pi)
         self.wait_until_stable()
 
-        self.update_target_pos()
+        #self.update_target_pos()
 
         obs = self.get_observation()
         distance = np.linalg.norm(obs[0:3])
         reward = -distance
         terminated = (distance < 0.05)
         if terminated:
+            print("SUCCESS!")
             reward += 10
         truncated = False
         info = {}
@@ -113,7 +115,7 @@ class UR5GripperEnv(gym.Env):
         return ee_pos_absolute, quat
     
     def update_target_pos(self):
-        self.target_pos = self.model.body_pos[self.target_id]
+        self.target_pos = self.data.xpos[self.target_id]
         return self.target_pos
     
     def draw_sphere(self, center, radius, color=(1, 0, 0, 1)):
@@ -129,6 +131,23 @@ class UR5GripperEnv(gym.Env):
             )
         self.viewer.user_scn.ngeom = 1
         
+def generate_random_point_in_shell(cx, cy, cz, r1, r2):
+    """Generate a random point inside a sphere of radius r1 but outside a smaller sphere of radius r2."""
+    
+    assert r2 < r1, "r2 must be smaller than r1"
+    
+    # Generate a random point in the larger sphere
+    u = np.random.uniform(0, 1)  # Random scaling factor for radius
+    theta = np.random.uniform(0, 2 * np.pi)  # Azimuthal angle
+    phi = np.arccos(np.random.uniform(-1, 1))  # Polar angle (uniform on sphere)
+        
+    # Convert to Cartesian coordinates
+    r = (r2 + (r1 - r2) * u)  # Ensure radius is between r2 and r1
+    x = r * np.sin(phi) * np.cos(theta) + cx
+    y = r * np.sin(phi) * np.sin(theta) + cy
+    z = r * np.cos(phi) + cz
+
+    return x, y, z
 
 import time
 if __name__ == "__main__":

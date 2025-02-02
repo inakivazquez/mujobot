@@ -11,3 +11,9 @@ register(
     entry_point='mujobot.envs.ur5_gripper_v0:UR5GripperEnv',
     max_episode_steps=100,
 )
+
+register(
+    id='mujobot/ur5-paddle-v0',
+    entry_point='mujobot.envs.ur5_paddle_v0:UR5PaddleEnv',
+    max_episode_steps=100,
+)

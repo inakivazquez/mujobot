@@ -20,11 +20,12 @@
     <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
     <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
 
+    <!--
     <body name="target">
       <joint type="free" name="target_joint"/>  
-      <geom type="sphere" size="0.025" pos="1 1 0.5" rgba="1 0.2 0.2 1"/>
+      <geom type="sphere" size="0.025" pos="0 0 0.5" rgba="1 0.2 0.2 1"/>
     </body>
-
+    -->
   </worldbody>
 
 

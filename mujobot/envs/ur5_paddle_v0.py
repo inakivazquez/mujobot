@@ -35,29 +35,37 @@ class UR5PaddleEnv(gym.Env):
         # Action space is 6 joint angles and the gripper open/close level (0 to 1)
         action_max = 2*math.pi / 10
         self.action_space = gym.spaces.Box(low=np.array([-action_max]*6, dtype=np.float32), high=np.array([+action_max]*6, dtype=np.float32), shape=(6,))
-        self.target_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "target")
+        self.ball_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "ball")
+        self.paddle_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "paddle")
 
 
     def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None) -> tuple[ObsType, dict[str, Any]]:
         np.random.seed(seed)
         mujoco.mj_resetData(self.model, self.data)  # Fully resets simulation state
-        self.target_pos = np.array(generate_random_point_in_shell(0, 0, 0, 0.8, 0.7))
-        self.target_pos[2] = abs (self.target_pos[2])
 
-        qpos_addr = self.model.jnt_qposadr[mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_JOINT, "target_joint")]
-        #self.data.qpos[qpos_addr:qpos_addr+3] = self.target_pos
+        self.data.qpos[0:6] = [math.pi/2, -math.pi/2, 0, 0, 0, 0]
+        # Starting position
+        self.data.ctrl[0:6] = [math.pi/2, -math.pi/2, 0, 0, 0, 0]
 
-        if self.render_mode == "human":
-            self.draw_sphere(self.target_pos, 0.025)
+        # Set the new position and force of the ball 
+        random_diff = np.random.uniform(low=[-0.1, -0.09, 0], high=[+0.09, +0.15, 0])
+        ball_joint_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_JOINT, "ball_joint")
+        qpos_idx = self.model.jnt_qposadr[ball_joint_id]  # Get the index in qpos
+        self.data.qpos[qpos_idx:qpos_idx+3] = random_diff
+        self.data.xfrc_applied[self.ball_id, :3] = np.random.uniform(low=-0.5, high=0.5, size=3)
+
+        self.wait_until_stable()
+
         return self.get_observation(), {}
 
     def wait_until_stable(self, sim_steps=500, tolerance=1e-3):
-        joint_pos = self.get_observation()[3:]
+        joint_pos = np.array(self.data.qpos[0:6], dtype=np.float32)
+
         for _ in range(sim_steps):
             mujoco.mj_step(self.model, self.data)
             if self.render_mode == "human":
                 self.viewer.sync()
-            new_joint_pos = self.get_observation()[3:]
+            new_joint_pos = np.array(self.data.qpos[0:6], dtype=np.float32)
 
             if np.linalg.norm(new_joint_pos - joint_pos, ord=np.inf) < tolerance:  # Faster error check, similar to abs np.all
                 return True
@@ -70,24 +78,24 @@ class UR5PaddleEnv(gym.Env):
         assert self.action_space.contains(action), f"Invalid Action: {action}"
 
         action[0:6] = self.data.ctrl[0:6] + action[0:6]
-        #action[6] = 0 if action[6] < 0.5 else 255
-        action[6] = 255 # Always keep the gripper open
 
         action[0:6] = np.clip(action[0:6], -2*math.pi, +2*math.pi)
 
-        self.data.ctrl[:] = action
+        self.data.ctrl[0:6] = action
+        self.data.ctrl[6] = 255 # Gripper closed at all times
         self.wait_until_stable()
 
         #self.update_target_pos()
 
-        obs = self.get_observation()
-        distance = np.linalg.norm(obs[0:3])
-        reward = -distance
-        terminated = (distance < 0.05)
-        if terminated:
-            print("SUCCESS!")
-            reward += 10
+        ball_pos = self.get_ball_position()
+        paddle_pos = self.get_paddle_position()
+        reward = +1 # Keep alive reward
+        terminated = False
+        if paddle_pos[2] < ball_pos[2]: # Ball is below the paddle, fallen
+            reward = -10
+            terminated = True
         truncated = False
+        obs = self.get_observation()
         info = {}
         return obs, reward, terminated, truncated, info
 
@@ -99,10 +107,12 @@ class UR5PaddleEnv(gym.Env):
             self.viewer.close()
 
     def get_observation(self):
-        ee_pos, ee_quat = self.get_ee_pose()
+        ball_pos = self.get_ball_position()
+        paddle_pos = self.get_paddle_position() # Geometrical center of the paddle
+        pos_diff = paddle_pos - ball_pos
+
         joint_pos = self.data.qpos[0:6]
-        distance_vector = (self.target_pos - ee_pos)
-        return np.concatenate((distance_vector, joint_pos), dtype=np.float32)
+        return np.concatenate((pos_diff, joint_pos), dtype=np.float32)
 
     def get_ee_pose(self):
         pinch_name = "pinch"
@@ -114,6 +124,12 @@ class UR5PaddleEnv(gym.Env):
         # site_* methods to access global coordinates, other * methods (xpos, xquat) access local coordinates
         return ee_pos_absolute, quat
     
+    def get_ball_position(self):
+        return self.data.xpos[self.ball_id]
+    
+    def get_paddle_position(self):
+        return self.data.xpos[self.paddle_id]
+
     def update_target_pos(self):
         self.target_pos = self.data.xpos[self.target_id]
         return self.target_pos
@@ -152,10 +168,11 @@ def generate_random_point_in_shell(cx, cy, cz, r1, r2):
 import time
 if __name__ == "__main__":
     env = UR5PaddleEnv(render_mode="human")
-    obs = env.reset()
-    for _ in range(1000):
-        action = [0]*7
-        obs, reward, terminated, truncated, info = env.step(action)
-        env.render()
-        time.sleep(1)
+    for _ in range(100):
+        print("Resetting")
+        obs = env.reset()
+        for _ in range(1000):
+            action = [0]*6
+            obs, reward, terminated, truncated, info = env.step(action)
+            env.render()
     env.close()

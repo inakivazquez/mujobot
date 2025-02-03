@@ -52,12 +52,13 @@ class UR5GripperEnv(gym.Env):
         return self.get_observation(), {}
 
     def wait_until_stable(self, sim_steps=500, tolerance=1e-3):
-        joint_pos = self.get_observation()[3:]
+        joint_pos = np.array(self.data.qpos[0:6], dtype=np.float32)
+
         for _ in range(sim_steps):
             mujoco.mj_step(self.model, self.data)
             if self.render_mode == "human":
                 self.viewer.sync()
-            new_joint_pos = self.get_observation()[3:]
+            new_joint_pos = np.array(self.data.qpos[0:6], dtype=np.float32)
 
             if np.linalg.norm(new_joint_pos - joint_pos, ord=np.inf) < tolerance:  # Faster error check, similar to abs np.all
                 return True

@@ -19,14 +19,12 @@
   <worldbody>
     <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
     <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
-
-    <!--
-    <body name="target">
-      <joint type="free" name="target_joint"/>  
-      <geom type="sphere" size="0.025" pos="0 0 0.5" rgba="1 0.2 0.2 1"/>
+  
+    <body name="ball">
+      <joint type="free" name="ball_joint"/>  
+      <geom type="sphere" size="0.025" pos="-0.1 -0.65 1.4" rgba="0.8 0.8 0.8 1" density="5000" solref="0.05 0.2" solimp=".95 .95 .001"/> 
+      <inertial mass="0.01" pos="0 0 0" quat="1 0 0 0" diaginertia="0.001 0.001 0.001"/>
     </body>
-    -->
   </worldbody>
-
 
 </mujoco>

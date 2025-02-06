@@ -29,11 +29,12 @@ class UR5PaddleEnv(gym.Env):
             # Create a viewer to visualize the simulation
             self.viewer = mujoco.viewer.launch_passive(self.model, self.data)
 
+
         # Target pos, current pos of ee, joint positions
         self.observation_space = gym.spaces.Box(low=np.array([-2]*3 + [-2*math.pi]*6, dtype=np.float32), high=np.array([+2]*3 + [+2*math.pi]*6, dtype=np.float32), shape=(9,))
 
         # Action space is 6 joint angles and the gripper open/close level (0 to 1)
-        action_max = 2*math.pi / 10
+        action_max = 2*math.pi / 360
         self.action_space = gym.spaces.Box(low=np.array([-action_max]*6, dtype=np.float32), high=np.array([+action_max]*6, dtype=np.float32), shape=(6,))
         self.ball_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "ball")
         self.paddle_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "paddle")
@@ -47,12 +48,11 @@ class UR5PaddleEnv(gym.Env):
         # Starting position
         self.data.ctrl[0:6] = [math.pi/2, -math.pi/2, 0, 0, 0, 0]
 
-        # Set the new position and force of the ball 
+        # Set the new position of the ball 
         random_diff = np.random.uniform(low=[-0.1, -0.09, 0], high=[+0.09, +0.15, 0])
         ball_joint_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_JOINT, "ball_joint")
         qpos_idx = self.model.jnt_qposadr[ball_joint_id]  # Get the index in qpos
-        self.data.qpos[qpos_idx:qpos_idx+3] = random_diff
-        self.data.xfrc_applied[self.ball_id, :3] = np.random.uniform(low=-0.5, high=0.5, size=3)
+        self.data.qpos[qpos_idx:qpos_idx+3] += random_diff
 
         self.wait_until_stable()
 
@@ -90,17 +90,20 @@ class UR5PaddleEnv(gym.Env):
         ball_pos = self.get_ball_position()
         paddle_pos = self.get_paddle_position()
         reward = +1 # Keep alive reward
+        reward += max(0, paddle_pos[2] - 0.8) # Paddle higher than 0.8, add reward
         terminated = False
-        if paddle_pos[2] < ball_pos[2]: # Ball is below the paddle, fallen
-            reward = -10
-            terminated = True
+        if ball_pos[2] < 0.2: # Ball on the ground or too low, fallen
+            print("Ball fell!")
+            reward = -500
+            terminated= True
         truncated = False
         obs = self.get_observation()
         info = {}
         return obs, reward, terminated, truncated, info
 
     def render(self) -> RenderFrame | list[RenderFrame] | None:
-        self.viewer.sync()
+        if self.render_mode == "human":
+            self.viewer.sync()
 
     def close(self):
         if self.render_mode == 'human':
@@ -125,10 +128,10 @@ class UR5PaddleEnv(gym.Env):
         return ee_pos_absolute, quat
     
     def get_ball_position(self):
-        return self.data.xpos[self.ball_id]
+        return self.data.geom_xpos[self.ball_id]
     
     def get_paddle_position(self):
-        return self.data.xpos[self.paddle_id]
+        return self.data.site_xpos[self.paddle_id]
 
     def update_target_pos(self):
         self.target_pos = self.data.xpos[self.target_id]

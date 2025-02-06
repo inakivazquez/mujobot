@@ -15,5 +15,5 @@ register(
 register(
     id='mujobot/ur5-paddle-v0',
     entry_point='mujobot.envs.ur5_paddle_v0:UR5PaddleEnv',
-    max_episode_steps=100,
+    max_episode_steps=1000,
 )

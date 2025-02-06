@@ -3724,3 +3724,6 @@ WARNING: mixed solref format, replacing with default
 Mon Feb  3 21:14:06 2025
 WARNING: mixed solref format, replacing with default
 
+Wed Feb  5 13:18:06 2025
+ERROR: gladLoadGL error
+

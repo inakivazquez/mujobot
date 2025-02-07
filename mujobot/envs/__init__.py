@@ -17,3 +17,15 @@ register(
     entry_point='mujobot.envs.ur5_paddle_v0:UR5PaddleEnv',
     max_episode_steps=1000,
 )
+
+register(
+    id='mujobot/ur5-paddle-v1',
+    entry_point='mujobot.envs.ur5_paddle_v1:UR5PaddleEnv',
+    max_episode_steps=1000,
+)
+
+register(
+    id='mujobot/ant-v0',
+    entry_point='mujobot.envs.ant:AntEnv',
+    max_episode_steps=1000,
+)

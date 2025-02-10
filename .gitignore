@@ -148,3 +148,16 @@ cython_debug/
 # IDEs
 .vscode/*
 .idea/*
+videos/rl-video-episode-0.mp4
+videos/rl-video-episode-1.mp4
+videos/rl-video-episode-2.mp4
+videos/rl-video-episode-3.mp4
+videos/rl-video-episode-4.mp4
+videos/rl-video-episode-5.mp4
+videos/rl-video-episode-6.mp4
+videos/rl-video-episode-7.mp4
+videos/rl-video-episode-8.mp4
+videos/rl-video-episode-9.mp4
+videos/rl-video-episode-10.mp4
+videos/rl-video-episode-11.mp4
+videos/rl-video-episode-12.mp4

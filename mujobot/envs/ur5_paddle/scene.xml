@@ -1,4 +1,7 @@
 <mujoco model="ur5e scene">
+
+  <option timestep="0.001"/>
+
   <include file="ur5e_paddle.xml"/>
 
   <statistic center="0.3 0 0.4" extent="0.8"/>
@@ -14,6 +17,8 @@
     <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3"
       markrgb="0.8 0.8 0.8" width="300" height="300"/>
     <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
+    <texture type="2d" name="ball_texture" builtin="checker" width="16" height="16" rgb1="1 1 1" rgb2="0 0 0"/>
+    <material name="ball_material" texture="ball_texture" texrepeat="2 2" />
   </asset>
 
   <worldbody>
@@ -22,10 +27,21 @@
   
     <body name="ball">
       <joint type="free" name="ball_joint"/>  
-      <geom type="sphere" size="0.025" pos="-0.1 -0.65 1.2" rgba="0.8 0.8 0.8 1" density="100"/>
-      <!--<geom type="sphere" size="0.025" pos="-0.1 -0.65 1.4" rgba="0.8 0.8 0.8 1" density="100" solref="0.05 0.2" solimp=".95 .95 .001"/>  -->
-      <inertial mass="0.01" pos="0 0 0" quat="1 0 0 0" diaginertia="0.001 0.001 0.001"/>
+      <geom name="ball_geom" type="sphere" size="0.025" pos="-0.1 -0.50 1.2" material="ball_material"
+          solref="0.002 1"
+          solimp="0.98 0.995 0.0001" 
+          friction="0.6 0.4 0.2"   
+      />
     </body>
   </worldbody>
+
+
+<!--  <contact>
+    <pair geom1="ball_geom" geom2="paddle_geom" 
+          condim="4" 
+          friction="0.5 0.5 0.2 0.5 0.5"
+          solref="0.001 0.9"
+          solimp="0.0001 0.7 0.001"/>
+  </contact> -->
 
 </mujoco>

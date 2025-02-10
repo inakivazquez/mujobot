@@ -18,11 +18,23 @@ class UR5PaddleEnv(MujocoEnv):
 
     def __init__(self, **kwargs):
 
+        default_camera_config = {
+            "distance": 2.5,
+            "elevation": -30.0,
+            "azimuth": 90.0,
+            "lookat": [0.0, 0.0, 0.6],
+        }
+
+        screen_width = screen_height = 800
+
         MujocoEnv.__init__(
             self,
             model_path=os.path.dirname(os.path.abspath(__file__)) + "/ur5_paddle/scene.xml",
             frame_skip=5,
             observation_space=None,
+            default_camera_config=default_camera_config,
+            width=screen_width,
+            height=screen_height,
             **kwargs,
         )
 
@@ -43,7 +55,7 @@ class UR5PaddleEnv(MujocoEnv):
         self.observation_space = gym.spaces.Box(low=np.array([-2]*3 + [-2*math.pi]*6, dtype=np.float32), high=np.array([+2]*3 + [+2*math.pi]*6, dtype=np.float32), shape=(9,))
 
         # Action space is 6 joint angles and the gripper open/close level (0 to 1)
-        action_max = 2*math.pi / 360
+        action_max = 2*math.pi / 36
         self.action_space = gym.spaces.Box(low=np.array([-action_max]*6, dtype=np.float32), high=np.array([+action_max]*6, dtype=np.float32), shape=(6,))
         self.ball_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "ball")
         self.paddle_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "paddle")
@@ -56,52 +68,45 @@ class UR5PaddleEnv(MujocoEnv):
         self.data.ctrl[6] = 255  # Gripper closed
 
         # Set the new position of the ball 
-        random_diff = np.random.uniform(low=[-0.1, -0.09, 0], high=[+0.09, +0.15, 0])
+        random_diff = np.random.uniform(low=[-0.05, -0.05, 0], high=[+0.05, +0.05, 0])
         ball_joint_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_JOINT, "ball_joint")
         qpos_idx = self.model.jnt_qposadr[ball_joint_id]  # Get the index in qpos
         self.data.qpos[qpos_idx:qpos_idx+3] += random_diff
 
-        #self.wait_until_stable()
-
         return self.get_observation()
 
-    """
-    def wait_until_stable(self, sim_steps=500, tolerance=1e-3):
+    def wait_until_stable(self, control, sim_steps=5, tolerance=1e-1):
         joint_pos = np.array(self.data.qpos[0:6], dtype=np.float32)
 
         for _ in range(sim_steps):
-            mujoco.mj_step(self.model, self.data)
+            self.do_simulation(control, self.frame_skip)
             if self.render_mode == "human":
-                self.viewer.sync()
+                self.render()
             new_joint_pos = np.array(self.data.qpos[0:6], dtype=np.float32)
 
-            if np.linalg.norm(new_joint_pos - joint_pos, ord=np.inf) < tolerance:  # Faster error check, similar to abs np.all
+            if np.linalg.norm(new_joint_pos - joint_pos, ord=np.inf) < tolerance:
                 return True
-        
+            
             joint_pos = new_joint_pos
+            print(".", end="")
         print("Warning: The robot configuration did not stabilize")
         return False
-        """
 
     def step(self, action: ActType) -> tuple[ObsType, SupportsFloat, bool, bool, dict[str, Any]]:
         assert self.action_space.contains(action), f"Invalid Action: {action}"
 
-        action[0:6] = self.data.ctrl[0:6] + action[0:6]
+        new_control = np.array(self.data.qpos[0:6], np.float32) + np.array(action[0:6], np.float32)
+        new_control = np.clip(new_control, -2*math.pi, +2*math.pi) # Clip final configuration to be within limits
+        new_control = np.append(new_control, 255) # Gripper closed at all times
 
-        action[0:6] = np.clip(action[0:6], -2*math.pi, +2*math.pi)
-        action = np.array(action, dtype=np.float32)
-        action = np.append(action, 255) # Gripper closed at all times
-
-        self.do_simulation(action, self.frame_skip)
-
-        #self.update_target_pos()
+        self.do_simulation(new_control, self.frame_skip)
 
         ball_pos = self.get_ball_position()
         paddle_pos = self.get_paddle_position()
+        distance = np.linalg.norm(paddle_pos - ball_pos)
         reward = +1 # Keep alive reward
-        reward += max(0, paddle_pos[2] - 0.8) # Paddle higher than 0.8, add reward
         terminated = False
-        if ball_pos[2] < 0.2: # Ball on the ground or too low, fallen
+        if ball_pos[2] < paddle_pos[2] - 0.1 or distance > 2: # Ball on the ground or too low, or jumped away fallen
             print("Ball fell!")
             reward = -500
             terminated= True
@@ -110,14 +115,12 @@ class UR5PaddleEnv(MujocoEnv):
         info = {}
         if self.render_mode == "human":
             self.render()
-            #time.sleep(0.01)
         return obs, reward, terminated, truncated, info
 
     def get_observation(self):
         ball_pos = self.get_ball_position()
         paddle_pos = self.get_paddle_position() # Geometrical center of the paddle
         pos_diff = paddle_pos - ball_pos
-
         joint_pos = self.data.qpos[0:6]
         return np.concatenate((pos_diff, joint_pos), dtype=np.float32)
 
@@ -136,29 +139,7 @@ class UR5PaddleEnv(MujocoEnv):
     
     def get_paddle_position(self):
         return self.data.site_xpos[self.paddle_id]
-
-    def update_target_pos(self):
-        self.target_pos = self.data.xpos[self.target_id]
-        return self.target_pos
-
         
-def generate_random_point_in_shell(cx, cy, cz, r1, r2):
-    """Generate a random point inside a sphere of radius r1 but outside a smaller sphere of radius r2."""
-    
-    assert r2 < r1, "r2 must be smaller than r1"
-    
-    # Generate a random point in the larger sphere
-    u = np.random.uniform(0, 1)  # Random scaling factor for radius
-    theta = np.random.uniform(0, 2 * np.pi)  # Azimuthal angle
-    phi = np.arccos(np.random.uniform(-1, 1))  # Polar angle (uniform on sphere)
-        
-    # Convert to Cartesian coordinates
-    r = (r2 + (r1 - r2) * u)  # Ensure radius is between r2 and r1
-    x = r * np.sin(phi) * np.cos(theta) + cx
-    y = r * np.sin(phi) * np.sin(theta) + cy
-    z = r * np.cos(phi) + cz
-
-    return x, y, z
 
 import time
 import mujobot

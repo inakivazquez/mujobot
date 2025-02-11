@@ -26,7 +26,7 @@
     <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
   
     <body name="ball">
-      <joint type="free" name="ball_joint"/>  
+      <joint type="free" name="ball_joint" damping="1e-4"/>  <!-- damping is the key value to increase friction -->
       <geom name="ball_geom" type="sphere" size="0.025" pos="-0.1 -0.50 1.2" material="ball_material"
           solref="0.002 1"
           solimp="0.98 0.995 0.0001" 

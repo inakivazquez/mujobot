@@ -66,6 +66,7 @@ class UR5PaddleEnv(MujocoEnv):
         # Starting position
         self.data.ctrl[0:6] = [math.pi/2, -math.pi/2, 0, 0, 0, 0]
         self.data.ctrl[6] = 255  # Gripper closed
+        self.initial_position = self.data.qpos[0:6].copy()
 
         # Set the new position of the ball 
         random_diff = np.random.uniform(low=[-0.05, -0.05, 0], high=[+0.05, +0.05, 0])
@@ -105,6 +106,8 @@ class UR5PaddleEnv(MujocoEnv):
         paddle_pos = self.get_paddle_position()
         distance = np.linalg.norm(paddle_pos - ball_pos)
         reward = +1 # Keep alive reward
+        initial_position_offset = np.linalg.norm(self.data.qpos[0:6] - self.initial_position)
+        reward -= initial_position_offset * 0.1 # Penalize for moving away from the initial position
         terminated = False
         if ball_pos[2] < paddle_pos[2] - 0.1 or distance > 2: # Ball on the ground or too low, or jumped away fallen
             print("Ball fell!")

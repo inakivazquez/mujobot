@@ -68,11 +68,24 @@ class UR5PaddleEnv(MujocoEnv):
         self.data.ctrl[6] = 255  # Gripper closed
         self.initial_position = self.data.qpos[0:6].copy()
 
-        # Set the new position of the ball 
-        random_diff = np.random.uniform(low=[-0.05, -0.05, 0], high=[+0.05, +0.05, 0])
+        # Set random position of the ball 
+        random_diff = np.random.uniform(low=[-0.05, -0.10, 0], high=[+0.05, +0.05, 0])
         ball_joint_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_JOINT, "ball_joint")
         qpos_idx = self.model.jnt_qposadr[ball_joint_id]  # Get the index in qpos
         self.data.qpos[qpos_idx:qpos_idx+3] += random_diff
+
+        # Set random speed of the ball
+        # Ensure we get the correct `qvel` indices
+        ball_dof = self.model.body_dofadr[self.ball_id]  # Index of velocity in `qvel`
+
+        # Assign a random velocity (linear + angular)
+        random_linear_velocity = np.random.uniform(-0.5, 0.5, size=3)  # Random velocity in x, y, z
+        random_angular_velocity = np.random.uniform(-1, +1, size=3)  # Random spin
+        random_linear_velocity[2] = 0 # No vertical velocity
+
+        # Set the velocity in `qvel`
+        self.data.qvel[ball_dof : ball_dof + 3] = random_linear_velocity  # Set linear velocity
+        self.data.qvel[ball_dof + 3 : ball_dof + 6] = random_angular_velocity  # Set angular velocity
 
         return self.get_observation()
 
@@ -106,9 +119,7 @@ class UR5PaddleEnv(MujocoEnv):
         paddle_pos = self.get_paddle_position()
         distance = np.linalg.norm(paddle_pos - ball_pos)
         reward = +1 # Keep alive reward
-        initial_position_offset = np.linalg.norm(self.data.qpos[0:6] - self.initial_position)
-        if initial_position_offset > 0.5:
-            reward -= initial_position_offset * 0.1 # Penalize for moving away from the initial position
+        reward += paddle_pos[2] - 0.7 # Reward for keeping the paddle high
         terminated = False
         if ball_pos[2] < paddle_pos[2] - 0.1 or distance > 2: # Ball on the ground or too low, or jumped away fallen
             print("Ball fell!")

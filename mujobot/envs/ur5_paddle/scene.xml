@@ -27,17 +27,11 @@
   
     <body name="ball">
       <joint type="free" name="ball_joint" damping="1e-4"/>  <!-- damping is the key value to increase friction -->
-<!--      <geom name="ball_geom" type="sphere" size="0.025" pos="-0.1 -0.50 1.2" material="ball_material"
-          solref="0.02 0.1"
-          solimp="1 0.995 0.000001"  
-          friction="0.05 0.05 0.01"
-      />-->
-
-      <geom name="ball_geom" type="sphere" size="0.025" pos="-0.1 -0.50 1.2" material="ball_material"
-          solref="0.002 0.5"
-          solimp="0.98 0.995 0.0001" 
-          friction="0.6 0.4 0.2"   
-      />
+        <geom name="ball_geom" type="sphere" size="0.025" pos="-0.1 -0.50 1.2" material="ball_material"
+            solref="0.002 0.5"
+            solimp="0.98 0.995 0.0001" 
+            friction="0.6 0.4 0.2"   
+        />
     </body>
   </worldbody>
 

@@ -191,7 +191,7 @@
                   <geom class="eef_collision" pos="0 0.08 0" quat="1 1 0 0" size="0.04 0.02"/>
                   <!-- <site name="attachment_site" pos="0 0.1 0" quat="-1 1 0 0"/> -->
 
-                  <!-- Attached gripper section (xml extracted from 2f85.xml)-->
+                  <!-- BEGIN Attached gripper section (xml extracted from 2f85.xml)-->
                   <body name="base_mount" pos="0 0.1 0" childclass="2f85" quat="-1 1 0 0">
                     <geom class="visual" mesh="base_mount" material="black"/>
                     <geom class="collision_2f85" mesh="base_mount"/>
@@ -281,13 +281,6 @@
                       </body>
                       
                       <!-- Paddle section -->
-                      <!--<body name="paddle" pos="0 0 0.3">
-                          <geom name="paddle_geom" type="box" size="0.1 0.006 0.2" rgba="0.5 0.2 0.0 1"
-                    solref="0.02 0.1"
-                      solimp="1 0.995 0.000001"  
-                      friction="0.05 0.05 0.01"              
-                          />
-                      </body>-->
 
                       <body name="paddle" pos="0 0 0.3">
                           <geom name="paddle_geom" type="box" size="0.1 0.006 0.2" rgba="0.5 0.2 0.0 1"

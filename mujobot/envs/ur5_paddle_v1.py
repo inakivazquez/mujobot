@@ -117,11 +117,7 @@ class UR5PaddleEnv(MujocoEnv):
         paddle_pos = self.get_paddle_position()
         distance = np.linalg.norm(paddle_pos - ball_pos)
         reward = +1 # Keep alive reward
-        ee_height = self.data.site_xpos[self.paddle_id][2]
-        reward += ee_height - 0.6 # Reward for keeping the paddle at a certain height
-        initial_position_offset = np.linalg.norm(self.data.qpos[0:6] - self.initial_position)
-        #if initial_position_offset > 0.5:
-        #    reward -= initial_position_offset # Penalize for moving away from the initial position
+        reward += paddle_pos[2] - 0.7 # Reward for keeping the paddle high
         terminated = False
         if ball_pos[2] < paddle_pos[2] - 0.1 or distance > 2: # Ball on the ground or too low, or jumped away fallen
             print("Ball fell!")

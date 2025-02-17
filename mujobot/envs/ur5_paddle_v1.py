@@ -78,8 +78,8 @@ class UR5PaddleEnv(MujocoEnv):
         ball_dof = self.model.body_dofadr[self.ball_id]  # Index of velocity in `qvel`
         # Assign a random velocity (linear + angular)
         random_linear_velocity = np.random.uniform(-0.5, 0.5, size=3)  # Random velocity in x, y, z
-        random_angular_velocity = np.random.uniform(-0.5, 0.5, size=3)  # Random spin
-        random_linear_velocity[2] = 0  # No z-velocity
+        random_angular_velocity = np.random.uniform(-0.5, +0.5, size=3)  # Random spin
+        random_linear_velocity[2] = 0 # No vertical velocity
 
         # Set the velocity in `qvel`
         self.data.qvel[ball_dof : ball_dof + 3] = random_linear_velocity  # Set linear velocity
